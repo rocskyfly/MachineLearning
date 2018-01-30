@@ -1,4 +1,5 @@
 
+
 ```python
 """Reading a text-based dataset by pandas"""
 # 读取以制表符分隔值的文本文件，定义第一列列名为type，余下所有的列为一整体，列名为message。
@@ -56,27 +57,35 @@ repr(X_test)
 
 ```python
 """Building and fit LogisticRegression model"""
-# import and instantiate a logistic regression model
+# 采用逻辑回归和贝叶斯两种模型
+import pickle
 from sklearn.linear_model import LogisticRegression
+from sklearn.naive_bayes import MultinomialNB
 
-cls = LogisticRegression()
-cls.fit(X_train, y_train)
-```
+cls_dict = {
+        'LogisticRegression': LogisticRegression(),
+        'NaiveBayes': MultinomialNB()
+}
 
+# 训练并测试算法：若算法需要调优，可手动删除model序列化文件。
+for name, cls in cls_dict.items():
+    try:
+        with open('%s.pickle' % name, 'rb') as f:
+            cls = pickle.load(f)
+    except Exception, e:
+        # 训练算法
+        cls.fit(X_train, y_train)
+        print e
 
-```python
-"""Evaluate model"""
-cls.score(X_test, y_test)
-```
+        # 序列化算法
+        with open('%s.pickle' % name, 'wb') as f:
+            pickle.dump(cls, f)
 
+    """Evaluating model"""
+    # 获取混淆矩阵，及F_1 Score
+    from sklearn import metrics
+    print "%s Algorithm Accuracy: %s\nconfusion matrix:%s\nF1_score:%s\n" \
+          % (name, cls.score(X_test, y_test), metrics.confusion_matrix(y_test, cls.predict(X_test)),
+             metrics.f1_score(y_test, cls.predict(X_test)))
 
-```python
-"""偏斜类误差度量"""
-from sklearn import metrics
-
-# 获取混淆矩阵
-print metrics.confusion_matrix(y_test, cls.predict(X_test))
-
-# 获取F_1 Score
-metrics.f1_score(y_test, cls.predict(X_test))
 ```
